@@ -184,6 +184,10 @@ options {
 };
 EOF
 
+sudo ufw allow 53
+
+sudo ufw enable
+
 sudo systemctl restart bind9
 
 echo "Konfiguration abgeschlossen."
