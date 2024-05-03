@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo hostnamectl set-hostname linTroS2
+sudo hostnamectl set-hostname LinTroS2
 
 #netplan
 sudo cat <<EOT > /etc/netplan00-installer-config.yaml
