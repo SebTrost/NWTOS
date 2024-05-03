@@ -32,7 +32,7 @@ sudo sysctl -p
 
 
 # iptables binary
-IPT="iptables"
+IPT="/sbin/iptables"
 
 # delete old config
 $IPT -F
