@@ -1,4 +1,5 @@
 #!/bin/bash
+
 sudo hostnamectl set-hostname LinTroS2
 
 #netplan
