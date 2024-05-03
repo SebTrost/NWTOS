@@ -2,28 +2,27 @@
 
 sudo hostnamectl set-hostname LinTroS2
 
-# netplan
 sudo cat <<EOT > /etc/netplan/00-installer-config.yaml
 network:
-	ethernets:
-		ens33:
-			dhcpv4: true
-			match:
-				macaddress: 00:0c:29:41:8c:46
-			set-name: outside
-		ens37:
-			addresses:
-				- 10.0.0.254/24
-			match:
-				macaddress: 00:0c:29:41:8c:50
-			set-name: lan
-		ens38:
-			addresses:
-				- 192.168.30.254/24
-			match:
-				macaddress: 00:0c:29:41:8c:5a
-			set-name: dmz
-	version: 2
+  ethernets:
+    lan:
+      addresses:
+        - 10.0.0.254/24
+      match:
+        macaddress: 00:0c:29:41:8c:50
+      set-name: lan
+    dmz:
+      addresses:
+        - 192.168.30.254/24
+      match:
+        macaddress: 00:0c:29:41:8c:5a
+      set-name: dmz
+    outside:
+      dhcp4: true
+      match:
+        macaddress: 00:0c:29:41:8c:46
+      set-name: outside
+  version: 2
 EOT
 
 sudo netplan apply
