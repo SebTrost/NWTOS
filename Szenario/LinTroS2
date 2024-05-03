@@ -2,7 +2,7 @@
 sudo hostnamectl set-hostname LinTroS2
 
 #netplan
-sudo cat <<EOT > /etc/netplan00-installer-config.yaml
+sudo cat <<EOT > /etc/netplan/00-installer-config.yaml
 network:
 	ethernets:
 		ens33:
