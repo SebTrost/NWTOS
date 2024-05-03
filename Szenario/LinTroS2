@@ -26,14 +26,13 @@ network:
 EOT
 
 sudo netplan apply
-
 sudo sysctl -w net.ipv4.ip_forward=1
 sudo sysctl -w net.ipv6.conf.all.forwarding=1
 sudo sysctl -p
 
 
 # iptables binary
-IPT="/sbin/iptables"
+IPT="iptables"
 
 # delete old config
 $IPT -F
