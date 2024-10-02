@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# iptables binary
+IPT="/sbin/iptables"
+
+# delete old config
+$IPT -F
+$IPT -X
+
+# set default policy
+$IPT -P INPUT DROP
+$IPT -P OUTPUT DROP
+$IPT -P FORWARD DROP
+
+# activate routing
+echo "1" > /proc/sys/net/ipv4/ip_forward
+
+# interfaces (intern, extern, DMZ)
+INT=outside
+DMZ=dmz
+EXT=lan
+
+# server DMZ
+DNS=192.168.0.1
+
+# allow ongoing connections
+$IPT -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPT -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPT -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# allow loopback
+$IPT -A INPUT -i lo -j ACCEPT
+$IPT -A OUTPUT -o lo -j ACCEPT
+
+# create own chains
+$IPT -N int_to_dmz
+$IPT -N dmz_to_int
+$IPT -N int_to_ext
+$IPT -N dmz_to_ext
+$IPT -N ext_to_dmz
+
+# divide traffic
+$IPT -A FORWARD -i $INT -o $DMZ -j int_to_dmz
+$IPT -A FORWARD -i $DMZ -o $INT -j dmz_to_int
+$IPT -A FORWARD -i $INT -o $EXT -j int_to_ext
+$IPT -A FORWARD -i $DMZ -o $EXT -j dmz_to_ext
+$IPT -A FORWARD -i $EXT -o $DMZ -j ext_to_dmz
+
+### traffic from intern to DMZ
+$IPT -A int_to_dmz -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+$IPT -A int_to_dmz -m state --state NEW -p tcp --dport domain -d $DNS -j ACCEPT
+$IPT -A int_to_dmz -m state --state NEW -p udp --dport domain -d $DNS -j ACCEPT
+$IPT -A int_to_dmz -j REJECT
+
+###traffic from DMZ to intern
+$IPT -A dmz_to_int -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+$IPT -A dmz_to_int -m state --state NEW -p tcp --dport domain -s $DNS -j ACCEPT
+$IPT -A dmz_to_int -m state --state NEW -p udp --dport domain -s $DNS -j ACCEPT
+$IPT -A dmz_to_int -j REJECT
+
+
+### Verkehr aus der DMZ in das Internet
+$IPT -A dmz_to_ext -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+$IPT -A dmz_to_ext -m state --state NEW -p udp --dport ntp -j ACCEPT
+$IPT -A dmz_to_ext -m state --state NEW -p tcp -m multiport --dport http,https -j ACCEPT
+$IPT -A dmz_to_ext -m state --state NEW -p tcp --dport domain -s $DNS -j ACCEPT
+$IPT -A dmz_to_ext -m state --state NEW -p udp --dport domain -s $DNS -j ACCEPT
+$IPT -A dmz_to_ext -j REJECT
+
+### traffic from extern to DMZ
+$IPT -A ext_to_dmz -m state --state NEW -p tcp --dport domain -d $DNS -j ACCEPT
+$IPT -A ext_to_dmz -m state --state NEW -p udp --dport domain -d $DNS -j ACCEPT
+$IPT -A ext_to_dmz -m state --state NEW -p icmp --icmp-type fragmentation-needed -j ACCEPT
+$IPT -A ext_to_dmz -j REJECT
+
+### traffic from intern to extern
+$IPT -A int_to_ext -m state --state NEW -p tcp -m multiport --dport http,https -j ACCEPT
+$IPT -A int_to_ext -m state --state NEW -p tcp --dport domain -j ACCEPT
+$IPT -A int_to_ext -m state --state NEW -p udp --dport domain -j ACCEPT
+$IPT -A int_to_ext -m state --state NEW -p udp --dport ntp -j ACCEPT
+$IPT -A int_to_ext -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+$IPT -A dmz_to_ext -j REJECT
+
+### rules for the fw
+# incoming
+$IPT -A INPUT -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+
+# outgoing
+$IPT -A OUTPUT -o $DMZ -m state --state NEW -p tcp --dport domain -d $DNS -j ACCEPT
+$IPT -A OUTPUT -o $DMZ -m state --state NEW -p udp --dport domain -d $DNS -j ACCEPT
+$IPT -A OUTPUT -o $EXT -m state --state NEW -p udp --dport ntp -j ACCEPT
+$IPT -A OUTPUT -o $EXT -m state --state NEW -p icmp --icmp-type fragmentation-needed -j ACCEPT
