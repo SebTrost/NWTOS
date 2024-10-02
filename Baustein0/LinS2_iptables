@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # iptables binary
-IPT="/sbin/iptables"
+IPT="iptables"
 
 # delete old config
 $IPT -F
